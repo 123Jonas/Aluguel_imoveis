@@ -1,6 +1,14 @@
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const sendEmail = require('../utils/email');
+
+// Função para gerar token JWT
+const signToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN
+  });
+};
 
 // Gerar token de redefinição de senha
 exports.forgotPassword = async (req, res) => {
@@ -26,17 +34,41 @@ exports.forgotPassword = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     // 3) Enviar email
-    const resetURL = `${req.protocol}://${req.get(
-      'host'
-    )}/api/users/resetPassword/${resetToken}`;
+    const resetURL = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
-    const message = `Esqueceu sua senha? Clique no link abaixo para redefinir:\n\n${resetURL}\n\nSe você não solicitou a redefinição de senha, ignore este email.`;
+    const htmlMessage = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">Redefinição de Senha</h2>
+        <p>Olá,</p>
+        <p>Você solicitou a redefinição de sua senha. Clique no botão abaixo para criar uma nova senha:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetURL}" 
+             style="background-color: #4CAF50; 
+                    color: white; 
+                    padding: 12px 24px; 
+                    text-decoration: none; 
+                    border-radius: 4px;
+                    display: inline-block;">
+            Redefinir Senha
+          </a>
+        </div>
+        <p>Se o botão não funcionar, você pode copiar e colar o seguinte link no seu navegador:</p>
+        <p style="word-break: break-all;">${resetURL}</p>
+        <p>Este link é válido por 10 minutos.</p>
+        <p>Se você não solicitou a redefinição de senha, ignore este email.</p>
+        <hr style="margin: 20px 0;">
+        <p style="color: #666; font-size: 12px;">
+          Este é um email automático, por favor não responda.
+        </p>
+      </div>
+    `;
 
     try {
       await sendEmail({
         email: user.email,
-        subject: 'Seu token de redefinição de senha (válido por 10 minutos)',
-        message
+        subject: 'Redefinição de Senha - Boa Estadia',
+        message: htmlMessage,
+        html: true
       });
 
       res.status(200).json({
@@ -83,21 +115,34 @@ exports.resetPassword = async (req, res) => {
       });
     }
 
+    // 3) Validar a nova senha
+    if (!req.body.password || req.body.password.length < 6) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'A senha deve ter pelo menos 6 caracteres'
+      });
+    }
+
+    // 4) Atualizar a senha
     user.password = req.body.password;
     user.passwordResetToken = undefined;
     user.passwordResetExpires = undefined;
     await user.save();
 
-    // 3) Atualizar changedPasswordAt no modelo User (será feito via middleware)
-
-    // 4) Fazer login do usuário, enviar JWT
+    // 5) Gerar novo token JWT
     const token = signToken(user._id);
 
     res.status(200).json({
       status: 'success',
+      message: 'Senha redefinida com sucesso!',
       token,
       data: {
-        user
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
       }
     });
   } catch (error) {

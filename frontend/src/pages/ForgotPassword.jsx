@@ -51,6 +51,8 @@ const ForgotPassword = () => {
         setApiError('Erro de conexão. Verifique sua internet.');
       } else if (error.message === 'Failed to fetch') {
         setApiError('Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
+      } else if (error.message.includes('Credenciais de email não configuradas')) {
+        setApiError('O sistema de email não está configurado. Por favor, contate o administrador.');
       } else {
         setApiError(error.message);
       }

@@ -91,4 +91,75 @@ exports.login = async (req, res) => {
       message: error.message
     });
   }
+};
+
+// Atualizar perfil do usuário
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, email, phone } = req.body;
+    const userId = req.user.id;
+
+    // Verificar se o email já está em uso por outro usuário
+    if (email) {
+      const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Este email já está em uso por outro usuário'
+        });
+      }
+    }
+
+    // Atualizar o perfil
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { name, email, phone },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Usuário não encontrado'
+      });
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        user: updatedUser
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
+// Deletar perfil do usuário
+exports.deleteProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    const user = await User.findByIdAndDelete(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Usuário não encontrado'
+      });
+    }
+
+    res.status(204).json({
+      status: 'success',
+      data: null
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'error',
+      message: error.message
+    });
+  }
 }; 

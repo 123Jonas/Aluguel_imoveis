@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
+const jwt = require('jsonwebtoken');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -40,10 +41,15 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  passwordChangedAt: Date,
+  passwordResetToken: String,
+  passwordResetExpires: Date,
   createdAt: {
     type: Date,
     default: Date.now
   }
+}, {
+  timestamps: true
 });
 
 // Hash password before saving
@@ -54,9 +60,33 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
+// Middleware para atualizar passwordChangedAt quando a senha é alterada
+userSchema.pre('save', function(next) {
+  if (!this.isModified('password') || this.isNew) return next();
+
+  this.passwordChangedAt = Date.now() - 1000;
+  next();
+});
+
 // Method to check if password is correct
 userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
   return await bcrypt.compare(candidatePassword, userPassword);
+};
+
+// Método para verificar se a senha foi alterada após o token ser emitido
+userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt(this.passwordChangedAt.getTime() / 1000, 10);
+    return JWTTimestamp < changedTimestamp;
+  }
+  return false;
+};
+
+// Método para gerar token JWT
+userSchema.methods.generateAuthToken = function() {
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN
+  });
 };
 
 const User = mongoose.model('User', userSchema);

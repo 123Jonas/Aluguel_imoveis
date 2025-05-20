@@ -3,72 +3,73 @@ const mongoose = require('mongoose');
 const propertySchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Um título é obrigatório'],
+    required: [true, 'O título é obrigatório'],
     trim: true
   },
   description: {
     type: String,
-    required: [true, 'Uma descrição é obrigatória']
+    required: [true, 'A descrição é obrigatória'],
+    trim: true
+  },
+  price: {
+    type: Number,
+    required: [true, 'O preço é obrigatório'],
+    min: [0, 'O preço não pode ser negativo']
+  },
+  location: {
+    type: String,
+    required: [true, 'A cidade é obrigatória'],
+    trim: true
+  },
+  address: {
+    type: String,
+    required: [true, 'O endereço é obrigatório'],
+    trim: true
+  },
+  bedrooms: {
+    type: Number,
+    required: [true, 'O número de quartos é obrigatório'],
+    min: [0, 'O número de quartos não pode ser negativo']
+  },
+  bathrooms: {
+    type: Number,
+    required: [true, 'O número de banheiros é obrigatório'],
+    min: [0, 'O número de banheiros não pode ser negativo']
+  },
+  area: {
+    type: Number,
+    required: [true, 'A área é obrigatória'],
+    min: [0, 'A área não pode ser negativa']
   },
   type: {
     type: String,
     required: [true, 'O tipo de imóvel é obrigatório'],
-    enum: ['apartment', 'house', 'commercial', 'land']
-  },
-  price: {
-    type: Number,
-    required: [true, 'O preço é obrigatório']
-  },
-  address: {
-    street: {
-      type: String,
-      required: [true, 'O endereço é obrigatório']
-    },
-    neighborhood: {
-      type: String,
-      required: [true, 'O bairro é obrigatório']
-    },
-    city: {
-      type: String,
-      required: [true, 'A cidade é obrigatória']
-    },
-    state: {
-      type: String,
-      required: [true, 'A província é obrigatória']
-    },
-    coordinates: {
-      lat: Number,
-      lng: Number
+    enum: {
+      values: ['apartment', 'house', 'commercial'],
+      message: 'Tipo de imóvel inválido'
     }
-  },
-  features: {
-    bedrooms: Number,
-    bathrooms: Number,
-    area: Number,
-    parking: Number,
-    furnished: Boolean
-  },
-  images: [{
-    url: String,
-    caption: String
-  }],
-  owner: {
-    type: mongoose.Schema.ObjectId,
-    ref: 'User',
-    required: [true, 'Um imóvel deve ter um proprietário']
   },
   status: {
     type: String,
-    enum: ['available', 'rented', 'unavailable'],
+    required: [true, 'O status é obrigatório'],
+    enum: {
+      values: ['available', 'rented'],
+      message: 'Status inválido'
+    },
     default: 'available'
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  features: {
+    type: [String],
+    default: []
   },
-  updatedAt: {
-    type: Date,
-    default: Date.now
+  images: {
+    type: [String],
+    default: []
+  },
+  landlord: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+    required: [true, 'O proprietário é obrigatório']
   }
 }, {
   timestamps: true,
@@ -83,11 +84,11 @@ propertySchema.virtual('rentals', {
   localField: '_id'
 });
 
-// Índice para busca por localização
-propertySchema.index({ 'address.coordinates': '2dsphere' });
-propertySchema.index({ 'address.neighborhood': 1 });
+// Índices para melhorar a performance das consultas
+propertySchema.index({ landlord: 1 });
+propertySchema.index({ type: 1 });
 propertySchema.index({ status: 1 });
-propertySchema.index({ owner: 1 });
+propertySchema.index({ location: 1 });
 
 const Property = mongoose.model('Property', propertySchema);
 

@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Spinner, Alert } from 'react-bootstrap';
+import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -13,7 +16,8 @@ const Users = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/users', {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/api/admin/users`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -35,7 +39,8 @@ const Users = () => {
   const handleUpdateUserType = async (userId, userType) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -54,14 +59,16 @@ const Users = () => {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Tem certeza que deseja excluir este usuário?')) {
-      return;
-    }
+  const handleDeleteClick = (user) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
 
+  const handleDeleteConfirm = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/api/admin/users/${selectedUser._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -72,6 +79,8 @@ const Users = () => {
         throw new Error('Erro ao excluir usuário');
       }
 
+      setShowDeleteModal(false);
+      setSelectedUser(null);
       fetchUsers();
     } catch (error) {
       setError(error.message);
@@ -140,7 +149,7 @@ const Users = () => {
                 <Button
                   variant="danger"
                   size="sm"
-                  onClick={() => handleDeleteUser(user._id)}
+                  onClick={() => handleDeleteClick(user)}
                 >
                   Excluir
                 </Button>
@@ -149,6 +158,18 @@ const Users = () => {
           ))}
         </tbody>
       </Table>
+
+      <DeleteConfirmationModal
+        show={showDeleteModal}
+        onHide={() => {
+          setShowDeleteModal(false);
+          setSelectedUser(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Confirmar Exclusão de Usuário"
+        message="Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita."
+        itemName={selectedUser?.name}
+      />
     </div>
   );
 };

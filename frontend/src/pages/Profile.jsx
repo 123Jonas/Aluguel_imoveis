@@ -1,4 +1,76 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { FaUser, FaEnvelope, FaPhone, FaUserTag } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { Card, Button, Form, Alert } from 'react-bootstrap';
+import DeleteUserModal from '../components/DeleteUserModal';
+
+// Adicione estilos inline para centralização e cores
+const containerStyle = {
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: 'linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%)',
+};
+const cardStyle = {
+  background: '#fff',
+  borderRadius: '16px',
+  boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+  padding: '2.5rem',
+  minWidth: '340px',
+  maxWidth: '400px',
+  width: '100%',
+};
+const labelStyle = {
+  color: '#374151',
+  fontWeight: 600,
+  marginBottom: '0.25rem',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem',
+};
+const inputStyle = {
+  width: '100%',
+  padding: '0.5rem',
+  borderRadius: '8px',
+  border: '1px solid #cbd5e1',
+  marginBottom: '1rem',
+  fontSize: '1rem',
+  background: '#f1f5f9',
+  color: '#222',
+};
+const buttonStyle = {
+  background: 'linear-gradient(90deg, #6366f1 0%, #2563eb 100%)',
+  color: '#fff',
+  padding: '0.5rem 1.5rem',
+  borderRadius: '8px',
+  border: 'none',
+  fontWeight: 600,
+  fontSize: '1rem',
+  cursor: 'pointer',
+  transition: 'background 0.2s',
+  marginRight: '0.5rem',
+};
+const cancelButtonStyle = {
+  ...buttonStyle,
+  background: 'linear-gradient(90deg, #64748b 0%, #334155 100%)',
+};
+const textStyle = {
+  color: '#111827',
+  fontSize: '1.05rem',
+  fontWeight: 500,
+};
+const messageStyle = (type) => ({
+  padding: '0.75rem',
+  marginBottom: '1.5rem',
+  borderRadius: '8px',
+  textAlign: 'center',
+  fontWeight: 600,
+  color: type === 'success' ? '#166534' : '#b91c1c',
+  background: type === 'success' ? '#bbf7d0' : '#fee2e2',
+  border: `1px solid ${type === 'success' ? '#22c55e' : '#ef4444'}`,
+});
 
 const Profile = () => {
   const [profile, setProfile] = useState({
@@ -11,11 +83,20 @@ const Profile = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedProfile, setEditedProfile] = useState({});
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const navigate = useNavigate();
 
-  // Aqui você pode adicionar um useEffect para carregar os dados do perfil do backend
-  // useEffect(() => {
-  //   // Carregar dados do perfil
-  // }, []);
+  useEffect(() => {
+    // Carregar dados do usuário do localStorage
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    setProfile({
+      name: user.name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      userType: user.userType || '',
+    });
+  }, []);
 
   const handleEdit = () => {
     setEditedProfile({ ...profile });
@@ -35,103 +116,164 @@ const Profile = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Aqui você pode adicionar a lógica para salvar as alterações no backend
-    console.log('Salvando alterações:', editedProfile);
-    setProfile(editedProfile);
-    setIsEditing(false);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.patch(
+        `${process.env.REACT_APP_API_URL}/api/users/profile`,
+        editedProfile,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      // Atualizar dados no localStorage
+      const updatedUser = { ...JSON.parse(localStorage.getItem('user')), ...editedProfile };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      setProfile(editedProfile);
+      setIsEditing(false);
+      setMessage({ type: 'success', text: 'Perfil atualizado com sucesso!' });
+      
+      // Limpar mensagem após 3 segundos
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 3000);
+    } catch (error) {
+      setMessage({
+        type: 'danger',
+        text: error.response?.data?.message || 'Erro ao atualizar perfil'
+      });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/users/profile`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      navigate('/login');
+    } catch (error) {
+      setMessage({
+        type: 'danger',
+        text: error.response?.data?.message || 'Erro ao excluir conta'
+      });
+    }
+  };
+
+  const userTypeLabels = {
+    tenant: 'Inquilino',
+    landlord: 'Proprietário',
+    admin: 'Administrador'
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Meu Perfil</h1>
+    <>
+      <div style={containerStyle}>
+        <div style={cardStyle}>
+          <h1 style={{ textAlign: 'center', fontSize: '2rem', fontWeight: 700, marginBottom: '2rem', color: '#1e293b' }}>Meu Perfil</h1>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        {isEditing ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block mb-1">Nome</label>
-              <input
-                type="text"
-                name="name"
-                value={editedProfile.name}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-                required
-              />
+          {message.text && (
+            <div style={messageStyle(message.type)}>
+              {message.text}
             </div>
-            <div>
-              <label className="block mb-1">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={editedProfile.email}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-                required
-              />
-            </div>
-            <div>
-              <label className="block mb-1">Telefone</label>
-              <input
-                type="tel"
-                name="phone"
-                value={editedProfile.phone}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                Salvar
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-              >
-                Cancelar
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-gray-600 mb-1">Nome</label>
-              <p className="font-semibold">{profile.name}</p>
-            </div>
-            <div>
-              <label className="block text-gray-600 mb-1">Email</label>
-              <p className="font-semibold">{profile.email}</p>
-            </div>
-            <div>
-              <label className="block text-gray-600 mb-1">Telefone</label>
-              <p className="font-semibold">{profile.phone || 'Não informado'}</p>
-            </div>
-            <div>
-              <label className="block text-gray-600 mb-1">Tipo de Usuário</label>
-              <p className="font-semibold">
-                {profile.userType === 'landlord' ? 'Proprietário' :
-                 profile.userType === 'tenant' ? 'Inquilino' :
-                 profile.userType === 'admin' ? 'Administrador' : 'Não definido'}
-              </p>
-            </div>
-            <div>
-              <button
-                onClick={handleEdit}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                Editar Perfil
-              </button>
-            </div>
-          </div>
-        )}
+          )}
+
+          {isEditing ? (
+            <Form onSubmit={handleSubmit}>
+              <Form.Group className="mb-3">
+                <Form.Label><FaUser className="me-2" />Nome</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="name"
+                  value={editedProfile.name}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label><FaEnvelope className="me-2" />Email</Form.Label>
+                <Form.Control
+                  type="email"
+                  name="email"
+                  value={editedProfile.email}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label><FaPhone className="me-2" />Telefone</Form.Label>
+                <Form.Control
+                  type="tel"
+                  name="phone"
+                  value={editedProfile.phone}
+                  onChange={handleChange}
+                  required
+                />
+              </Form.Group>
+
+              <div className="d-flex justify-content-end gap-2">
+                <Button variant="secondary" onClick={handleCancel}>
+                  Cancelar
+                </Button>
+                <Button variant="primary" type="submit">
+                  Salvar Alterações
+                </Button>
+              </div>
+            </Form>
+          ) : (
+            <>
+              <div className="mb-4">
+                <h5><FaUser className="me-2" />Nome</h5>
+                <p className="ms-4">{profile.name}</p>
+              </div>
+
+              <div className="mb-4">
+                <h5><FaEnvelope className="me-2" />Email</h5>
+                <p className="ms-4">{profile.email}</p>
+              </div>
+
+              <div className="mb-4">
+                <h5><FaPhone className="me-2" />Telefone</h5>
+                <p className="ms-4">{profile.phone}</p>
+              </div>
+
+              <div className="mb-4">
+                <h5><FaUserTag className="me-2" />Tipo de Usuário</h5>
+                <p className="ms-4">{userTypeLabels[profile.userType] || profile.userType}</p>
+              </div>
+
+              <div className="d-flex justify-content-end gap-2">
+                <Button variant="primary" onClick={handleEdit}>
+                  Editar Perfil
+                </Button>
+                <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
+                  Excluir Conta
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+
+      <DeleteUserModal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteAccount}
+        userName={profile.name}
+      />
+    </>
   );
 };
 

@@ -20,7 +20,7 @@ const Home = () => {
         <div className="container position-relative min-vh-100 d-flex flex-column justify-content-center">
           <div className="row">
             <div className="col-lg-6 text-white">
-              <h1 className="display-4 fw-bold mb-4">Alugue seu imóvel em Angola com segurança</h1>
+              <h1 className="display-4 fw-bold mb-4">Alugue seu imóvel no Bié com segurança</h1>
               <p className="lead mb-5">Encontre apartamentos e casas para alugar em todo o país. Processo 100% digital, com garantia e segurança.</p>
               
               <div className="search-container bg-white p-4 rounded-4 shadow-lg">

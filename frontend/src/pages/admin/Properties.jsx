@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Table, Button, Spinner, Alert, Badge } from 'react-bootstrap';
+import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
 
 const Properties = () => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
 
   useEffect(() => {
     fetchProperties();
@@ -13,7 +16,8 @@ const Properties = () => {
   const fetchProperties = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/properties', {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/api/admin/properties`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -35,7 +39,8 @@ const Properties = () => {
   const handleUpdateStatus = async (propertyId, status) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/admin/properties/${propertyId}`, {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/api/admin/properties/${propertyId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -54,14 +59,16 @@ const Properties = () => {
     }
   };
 
-  const handleDeleteProperty = async (propertyId) => {
-    if (!window.confirm('Tem certeza que deseja excluir este imóvel?')) {
-      return;
-    }
+  const handleDeleteClick = (property) => {
+    setSelectedProperty(property);
+    setShowDeleteModal(true);
+  };
 
+  const handleDeleteConfirm = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/admin/properties/${propertyId}`, {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await fetch(`${apiUrl}/api/admin/properties/${selectedProperty._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -72,6 +79,8 @@ const Properties = () => {
         throw new Error('Erro ao excluir imóvel');
       }
 
+      setShowDeleteModal(false);
+      setSelectedProperty(null);
       fetchProperties();
     } catch (error) {
       setError(error.message);
@@ -124,7 +133,7 @@ const Properties = () => {
           {properties.map(property => (
             <tr key={property._id}>
               <td>{property.title}</td>
-              <td>{`${property.address.street}, ${property.address.neighborhood}`}</td>
+              <td>{`${property.address}, ${property.location}`}</td>
               <td>AOA {property.price.toLocaleString()}</td>
               <td>{property.type}</td>
               <td>
@@ -138,12 +147,12 @@ const Properties = () => {
                   <option value="unavailable">Indisponível</option>
                 </select>
               </td>
-              <td>{property.owner.name}</td>
+              <td>{property.owner?.name}</td>
               <td>
                 <Button
                   variant="danger"
                   size="sm"
-                  onClick={() => handleDeleteProperty(property._id)}
+                  onClick={() => handleDeleteClick(property)}
                 >
                   Excluir
                 </Button>
@@ -152,6 +161,18 @@ const Properties = () => {
           ))}
         </tbody>
       </Table>
+
+      <DeleteConfirmationModal
+        show={showDeleteModal}
+        onHide={() => {
+          setShowDeleteModal(false);
+          setSelectedProperty(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Confirmar Exclusão de Imóvel"
+        message="Tem certeza que deseja excluir este imóvel? Esta ação não pode ser desfeita."
+        itemName={selectedProperty?.title}
+      />
     </div>
   );
 };
