@@ -1,0 +1,153 @@
+/* Base styles */
+:root {
+  --primary-color: #e91e63;
+  --primary-dark: #c2185b;
+  --primary-light: #f48fb1;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Theme transition */
+:root {
+  transition: color-scheme 0.3s ease;
+}
+
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Hero section */
+.hero {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('/hero-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  position: relative;
+}
+
+.search-container {
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Custom Bootstrap overrides */
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+}
+
+.btn-outline-primary {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary-color) !important;
+}
+
+/* Neighborhood cards */
+.neighborhood-card {
+  transition: transform 0.3s ease;
+}
+
+.neighborhood-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Input group customization */
+.input-group-text {
+  color: #666;
+}
+
+.form-control:focus {
+  box-shadow: none;
+  border-color: var(--primary-color);
+}
+
+/* Authentication pages */
+.form-control-lg {
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+}
+
+.input-group .btn {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
+.form-check-input:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.form-check-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.25rem rgba(233, 30, 99, 0.25);
+}
+
+/* Dark mode specific styles */
+[data-bs-theme="dark"] {
+  --primary-color: #ff4081;
+  --primary-dark: #f50057;
+  --primary-light: #ff80ab;
+}
+
+[data-bs-theme="dark"] .search-container {
+  background-color: rgba(33, 37, 41, 0.95) !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-primary {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #000;
+}
+
+[data-bs-theme="dark"] .neighborhood-card {
+  background-color: rgba(33, 37, 41, 0.95);
+}
+
+[data-bs-theme="dark"] .card {
+  background-color: rgba(33, 37, 41, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+  background-color: rgba(33, 37, 41, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+[data-bs-theme="dark"] .input-group-text {
+  background-color: rgba(33, 37, 41, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+} 
