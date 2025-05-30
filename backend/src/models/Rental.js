@@ -2,57 +2,56 @@ const mongoose = require('mongoose');
 
 const rentalSchema = new mongoose.Schema({
   property: {
-    type: mongoose.Schema.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'Property',
-    required: [true, 'Um aluguel deve estar associado a um imóvel']
+    required: [true, 'O imóvel é obrigatório']
   },
   tenant: {
-    type: mongoose.Schema.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Um aluguel deve ter um inquilino']
+    required: [true, 'O inquilino é obrigatório']
   },
   landlord: {
-    type: mongoose.Schema.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Um aluguel deve ter um proprietário']
+    required: [true, 'O proprietário é obrigatório']
   },
   startDate: {
     type: Date,
-    required: [true, 'Data de início é obrigatória']
+    required: [true, 'A data de início é obrigatória']
+  },
+  duration: {
+    type: Number,
+    required: [true, 'A duração é obrigatória'],
+    min: [1, 'A duração deve ser maior que 0'],
+    validate: {
+      validator: function(v) {
+        return [12, 24, 36].includes(v);
+      },
+      message: 'A duração deve ser 12, 24 ou 36 meses'
+    }
   },
   endDate: {
     type: Date,
-    required: [true, 'Data de término é obrigatória']
-  },
-  price: {
-    type: Number,
-    required: [true, 'Valor do aluguel é obrigatório']
+    required: [true, 'A data de término é obrigatória']
   },
   status: {
     type: String,
-    enum: ['pending', 'active', 'completed', 'cancelled'],
+    enum: ['pending', 'active', 'completed', 'cancelled', 'rejected'],
     default: 'pending'
   },
-  paymentDay: {
+  monthlyRent: {
     type: Number,
-    required: [true, 'Dia do pagamento é obrigatório'],
-    min: 1,
-    max: 31
+    required: [true, 'O valor do aluguel mensal é obrigatório'],
+    min: [0, 'O valor do aluguel não pode ser negativo']
   },
-  deposit: {
+  securityDeposit: {
     type: Number,
-    required: [true, 'Valor do depósito é obrigatório']
+    required: [true, 'O valor do depósito de segurança é obrigatório'],
+    min: [0, 'O valor do depósito não pode ser negativo']
   },
   contract: {
-    signedByTenant: {
-      type: Boolean,
-      default: false
-    },
-    signedByLandlord: {
-      type: Boolean,
-      default: false
-    },
-    document: String
+    type: String // URL do contrato assinado
   },
   createdAt: {
     type: Date,
@@ -72,8 +71,6 @@ const rentalSchema = new mongoose.Schema({
 rentalSchema.index({ property: 1, status: 1 });
 rentalSchema.index({ tenant: 1, status: 1 });
 rentalSchema.index({ landlord: 1, status: 1 });
-rentalSchema.index({ startDate: 1 });
-rentalSchema.index({ endDate: 1 });
 
 // Middleware para popular property e users
 rentalSchema.pre(/^find/, function(next) {
@@ -90,6 +87,16 @@ rentalSchema.pre(/^find/, function(next) {
     select: 'name email phone'
   });
 
+  next();
+});
+
+// Middleware para calcular a data de término
+rentalSchema.pre('save', function(next) {
+  if (this.isModified('startDate') || this.isModified('duration')) {
+    const endDate = new Date(this.startDate);
+    endDate.setMonth(endDate.getMonth() + this.duration);
+    this.endDate = endDate;
+  }
   next();
 });
 

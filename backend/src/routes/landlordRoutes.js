@@ -1,18 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const { protect, restrictTo } = require('../middleware/authMiddleware');
+const landlordController = require('../controllers/landlordController');
 const propertyController = require('../controllers/propertyController');
+const { protect, restrictTo } = require('../middleware/authMiddleware');
 
-// Rotas de imóveis
-router
-  .route('/properties')
-  .get(protect, restrictTo('landlord'), propertyController.getLandlordProperties)
-  .post(protect, restrictTo('landlord'), propertyController.uploadImages, propertyController.createProperty);
+// Aplicar middleware de autenticação em todas as rotas
+router.use(protect);
 
-router
-  .route('/properties/:id')
-  .get(protect, propertyController.getProperty)
-  .patch(protect, restrictTo('landlord'), propertyController.uploadImages, propertyController.updateProperty)
-  .delete(protect, restrictTo('landlord'), propertyController.deleteProperty);
+// Restringir acesso apenas para proprietários e admin
+router.use(restrictTo('landlord', 'admin'));
+
+// Rotas para gerenciar propriedades
+router.get('/properties', landlordController.getMyProperties);
+router.post('/properties', propertyController.uploadImages, landlordController.createProperty);
+router.get('/properties/:id', landlordController.getProperty);
+router.patch('/properties/:id', propertyController.uploadImages, landlordController.updateProperty);
+router.delete('/properties/:id', landlordController.deleteProperty);
+
+// Rotas para gerenciar aluguéis
+router.get('/rentals', landlordController.getMyRentals);
+router.patch('/rentals/:id/approve', landlordController.approveRental);
+router.patch('/rentals/:id/reject', landlordController.rejectRental);
+
+// Rotas para gerenciar perfil
+router.get('/profile', landlordController.getProfile);
+router.patch('/profile', landlordController.updateProfile);
 
 module.exports = router; 

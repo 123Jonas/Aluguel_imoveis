@@ -2,34 +2,38 @@ const mongoose = require('mongoose');
 
 const rentalRequestSchema = new mongoose.Schema({
   property: {
-    type: mongoose.Schema.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'Property',
-    required: [true, 'Uma solicitação deve estar associada a um imóvel']
+    required: true
   },
   tenant: {
-    type: mongoose.Schema.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Uma solicitação deve ter um inquilino']
+    required: true
   },
   landlord: {
-    type: mongoose.Schema.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'Uma solicitação deve ter um proprietário']
+    required: true
   },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected', 'cancelled'],
+    enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
   },
   startDate: {
     type: Date,
-    required: [true, 'A data de início é obrigatória']
+    required: true
   },
   endDate: {
     type: Date,
-    required: [true, 'A data de término é obrigatória']
+    required: true
   },
   message: {
+    type: String,
+    trim: true
+  },
+  rejectionReason: {
     type: String,
     trim: true
   },
@@ -56,6 +60,12 @@ const rentalRequestSchema = new mongoose.Schema({
 rentalRequestSchema.index({ property: 1, tenant: 1 }, { unique: true });
 rentalRequestSchema.index({ landlord: 1 });
 rentalRequestSchema.index({ status: 1 });
+
+// Middleware para atualizar o updatedAt antes de salvar
+rentalRequestSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
+});
 
 const RentalRequest = mongoose.model('RentalRequest', rentalRequestSchema);
 

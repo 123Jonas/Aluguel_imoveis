@@ -1,164 +1,133 @@
-import { useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import * as yup from 'yup';
-import { yupResolver } from '@hookform/resolvers/yup';
-
-const schema = yup.object().shape({
-  password: yup
-    .string()
-    .required('Nova senha é obrigatória')
-    .min(6, 'A senha deve ter pelo menos 6 caracteres'),
-  confirmPassword: yup
-    .string()
-    .oneOf([yup.ref('password'), null], 'As senhas devem coincidir')
-    .required('Confirmação de senha é obrigatória'),
-});
+import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
+import Navbar from '../components/Navbar';
 
 const ResetPassword = () => {
-  const { token } = useParams();
+  const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-  const [apiError, setApiError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: yupResolver(schema)
-  });
+  const { token } = useParams();
 
-  const onSubmit = async (data) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    if (password !== passwordConfirm) {
+      setError('As senhas não coincidem');
+      setLoading(false);
+      return;
+    }
+
     try {
-      setIsLoading(true);
-      setApiError('');
-      
-      const response = await fetch(`http://localhost:5000/api/users/resetPassword/${token}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          password: data.password
-        })
+      await axios.patch(`http://localhost:5000/api/users/reset-password/${token}`, {
+        password,
+        passwordConfirm
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Erro ao redefinir senha');
-      }
-
-      // Redirecionar para o login com mensagem de sucesso
-      navigate('/login', { 
-        state: { message: 'Senha redefinida com sucesso! Faça login com sua nova senha.' }
-      });
-
+      setSuccess('Senha redefinida com sucesso! Redirecionando para o login...');
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
     } catch (error) {
-      setApiError(error.message);
-      console.error('Erro na redefinição de senha:', error);
+      setError(error.response?.data?.message || 'Erro ao redefinir senha');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center bg-light">
-      <div className="container py-5">
-        <div className="row justify-content-center">
-          <div className="col-12 col-md-8 col-lg-6 col-xl-5">
-            <div className="card border-0 shadow-lg">
-              <div className="card-body p-5">
-                <div className="text-center mb-5">
-                  <Link to="/" className="d-inline-block mb-4">
-                    <img src="/logo.png" alt="Boa Estadia" height="40" />
-                  </Link>
-                  <h1 className="h3 mb-3">Redefinir Senha</h1>
-                  <p className="text-muted">Digite sua nova senha</p>
-                </div>
-
-                {apiError && (
-                  <div className="alert alert-danger" role="alert">
-                    {apiError}
+    <>
+      <Navbar />
+      <div className="min-vh-100 d-flex align-items-center bg-light">
+        <div className="container py-5">
+          <div className="row justify-content-center">
+            <div className="col-12 col-md-8 col-lg-6 col-xl-5">
+              <div className="card border-0 shadow-lg">
+                <div className="card-body p-5">
+                  <div className="text-center mb-5">
+                    <h1 className="h3 mb-3">Redefinir Senha</h1>
+                    <p className="text-muted">Digite sua nova senha abaixo.</p>
                   </div>
-                )}
 
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  <div className="mb-4">
-                    <label htmlFor="password" className="form-label">Nova Senha</label>
-                    <div className="input-group">
+                  {error && (
+                    <div className="alert alert-danger" role="alert">
+                      {error}
+                    </div>
+                  )}
+
+                  {success && (
+                    <div className="alert alert-success" role="alert">
+                      {success}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSubmit}>
+                    <div className="mb-4">
+                      <label htmlFor="password" className="form-label">Nova Senha</label>
                       <input
-                        type={showPassword ? 'text' : 'password'}
-                        className={`form-control form-control-lg ${errors.password ? 'is-invalid' : ''}`}
+                        type="password"
+                        className="form-control form-control-lg"
                         id="password"
                         placeholder="Digite sua nova senha"
-                        {...register('password')}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                        required
                       />
-                      <button
-                        type="button"
-                        className="btn btn-outline-secondary"
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        <i className={`bi bi-eye${showPassword ? '-slash' : ''}`}></i>
-                      </button>
-                      {errors.password && (
-                        <div className="invalid-feedback">{errors.password.message}</div>
-                      )}
                     </div>
-                  </div>
 
-                  <div className="mb-4">
-                    <label htmlFor="confirmPassword" className="form-label">Confirmar Nova Senha</label>
-                    <div className="input-group">
+                    <div className="mb-4">
+                      <label htmlFor="passwordConfirm" className="form-label">Confirmar Nova Senha</label>
                       <input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        className={`form-control form-control-lg ${errors.confirmPassword ? 'is-invalid' : ''}`}
-                        id="confirmPassword"
+                        type="password"
+                        className="form-control form-control-lg"
+                        id="passwordConfirm"
                         placeholder="Confirme sua nova senha"
-                        {...register('confirmPassword')}
+                        value={passwordConfirm}
+                        onChange={(e) => setPasswordConfirm(e.target.value)}
+                        disabled={loading}
+                        required
                       />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="btn btn-primary btn-lg w-100 mb-4"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                          Redefinindo...
+                        </>
+                      ) : (
+                        'Redefinir Senha'
+                      )}
+                    </button>
+
+                    <div className="text-center">
                       <button
                         type="button"
-                        className="btn btn-outline-secondary"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="btn btn-link text-decoration-none"
+                        onClick={() => navigate('/login')}
+                        disabled={loading}
                       >
-                        <i className={`bi bi-eye${showConfirmPassword ? '-slash' : ''}`}></i>
+                        Voltar para o Login
                       </button>
-                      {errors.confirmPassword && (
-                        <div className="invalid-feedback">{errors.confirmPassword.message}</div>
-                      )}
                     </div>
-                  </div>
-
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary btn-lg w-100 mb-4"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Redefinindo...
-                      </>
-                    ) : (
-                      'Redefinir Senha'
-                    )}
-                  </button>
-
-                  <div className="text-center">
-                    <p className="mb-0">
-                      Lembrou sua senha?{' '}
-                      <Link to="/login" className="text-primary text-decoration-none">
-                        Voltar ao login
-                      </Link>
-                    </p>
-                  </div>
-                </form>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

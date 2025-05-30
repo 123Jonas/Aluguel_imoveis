@@ -8,8 +8,7 @@ const propertySchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    required: [true, 'A descrição é obrigatória'],
-    trim: true
+    required: [true, 'A descrição é obrigatória']
   },
   price: {
     type: Number,
@@ -18,13 +17,11 @@ const propertySchema = new mongoose.Schema({
   },
   location: {
     type: String,
-    required: [true, 'A cidade é obrigatória'],
-    trim: true
+    required: [true, 'A localização é obrigatória']
   },
   address: {
     type: String,
-    required: [true, 'O endereço é obrigatório'],
-    trim: true
+    required: [true, 'O endereço é obrigatório']
   },
   bedrooms: {
     type: Number,
@@ -43,33 +40,33 @@ const propertySchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    required: [true, 'O tipo de imóvel é obrigatório'],
-    enum: {
-      values: ['apartment', 'house', 'commercial'],
-      message: 'Tipo de imóvel inválido'
-    }
+    required: [true, 'O tipo do imóvel é obrigatório'],
+    enum: ['apartment', 'house', 'commercial']
   },
   status: {
     type: String,
     required: [true, 'O status é obrigatório'],
-    enum: {
-      values: ['available', 'rented'],
-      message: 'Status inválido'
-    },
+    enum: ['available', 'rented', 'maintenance'],
     default: 'available'
   },
-  features: {
-    type: [String],
-    default: []
-  },
-  images: {
-    type: [String],
-    default: []
-  },
+  features: [{
+    type: String
+  }],
+  images: [{
+    type: String
+  }],
   landlord: {
-    type: mongoose.Schema.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, 'O proprietário é obrigatório']
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true,
@@ -84,11 +81,21 @@ propertySchema.virtual('rentals', {
   localField: '_id'
 });
 
-// Índices para melhorar a performance das consultas
+// Índices
 propertySchema.index({ landlord: 1 });
-propertySchema.index({ type: 1 });
 propertySchema.index({ status: 1 });
+propertySchema.index({ type: 1 });
 propertySchema.index({ location: 1 });
+propertySchema.index({ price: 1 });
+
+// Middleware para popular landlord
+propertySchema.pre(/^find/, function(next) {
+  this.populate({
+    path: 'landlord',
+    select: 'name email phone'
+  });
+  next();
+});
 
 const Property = mongoose.model('Property', propertySchema);
 

@@ -147,7 +147,7 @@ const Properties = () => {
                   <option value="unavailable">Indisponível</option>
                 </select>
               </td>
-              <td>{property.owner?.name}</td>
+              <td>{property.landlord?.name || 'N/A'}</td>
               <td>
                 <Button
                   variant="danger"

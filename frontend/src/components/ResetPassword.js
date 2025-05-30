@@ -49,7 +49,7 @@ const ResetPassword = () => {
       // Redirecionar para o dashboard após 2 segundos
       setTimeout(() => {
         navigate('/dashboard');
-      }, 2000);
+      }, 5000);
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao redefinir senha');
     }

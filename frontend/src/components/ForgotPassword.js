@@ -34,7 +34,7 @@ const ForgotPassword = () => {
       // Redirecionar para a página de login após 3 segundos
       setTimeout(() => {
         navigate('/login');
-      }, 3000);
+      }, 5000);
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao enviar email de recuperação');
     }

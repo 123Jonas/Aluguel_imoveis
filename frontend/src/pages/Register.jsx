@@ -63,6 +63,7 @@ const Register = () => {
           email: data.email,
           phone: data.phone,
           password: data.password,
+          passwordConfirm: data.confirmPassword,
           userType: data.userType
         })
       });
@@ -92,11 +93,23 @@ const Register = () => {
   return (
     <>
       <Navbar />
-      <div className="min-vh-100 d-flex align-items-center bg-light">
-        <div className="container py-5">
+      <div className="min-vh-100 d-flex align-items-center" style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div className="position-absolute w-100 h-100" style={{
+          backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.05\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+          opacity: 0.5
+        }}></div>
+        <div className="container py-5 position-relative">
           <div className="row justify-content-center">
             <div className="col-12 col-md-8 col-lg-6">
-              <div className="card border-0 shadow-lg">
+              <div className="card border-0 shadow-lg" style={{
+                backdropFilter: 'blur(10px)',
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                borderRadius: '15px'
+              }}>
                 <div className="card-body p-5">
                   <div className="text-center mb-5">
                     <Link to="/" className="d-inline-block mb-4">

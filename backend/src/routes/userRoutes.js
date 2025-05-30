@@ -1,18 +1,42 @@
 const express = require('express');
-const userController = require('../controllers/userController');
-const authController = require('../controllers/authController');
-const authMiddleware = require('../middleware/authMiddleware');
-
 const router = express.Router();
+const { protect } = require('../middleware/authMiddleware');
+const {
+  signup,
+  login,
+  logout,
+  protect: protectUserController,
+  restrictTo,
+  getMe,
+  updatePassword,
+  forgotPassword,
+  resetPassword,
+  updateMe,
+  deleteMe,
+  getAllUsers,
+  getUser,
+  updateUser,
+  deleteUser
+} = require('../controllers/userController');
 
-router.post('/register', userController.register);
-router.post('/login', userController.login);
-router.post('/forgot-password', authController.forgotPassword);
-router.patch('/reset-password/:token', authController.resetPassword);
+// Rotas públicas
+router.post('/register', signup);
+router.post('/login', login);
 
 // Rotas protegidas
-router.use(authMiddleware.protect);
-router.patch('/profile', userController.updateProfile);
-router.delete('/profile', userController.deleteProfile);
+router.get('/me', protect, getMe);
+router.patch('/updatepassword', protect, updatePassword);
+router.post('/forgotpassword', forgotPassword);
+router.patch('/resetpassword/:token', resetPassword);
+router.patch('/updateme', protect, updateMe);
+router.delete('/deleteme', protect, deleteMe);
+
+// Rotas de administrador
+router.use(protect);
+router.use(restrictTo('admin'));
+router.get('/', getAllUsers);
+router.get('/:id', getUser);
+router.patch('/:id', updateUser);
+router.delete('/:id', deleteUser);
 
 module.exports = router; 

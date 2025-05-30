@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Table, Button, Spinner, Alert } from 'react-bootstrap';
+import { Table, Button, Spinner, Alert, Container } from 'react-bootstrap';
 import DeleteConfirmationModal from '../../components/DeleteConfirmationModal';
+import { FaPlus } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -8,6 +10,7 @@ const Users = () => {
   const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUsers();
@@ -98,8 +101,17 @@ const Users = () => {
   }
 
   return (
-    <div>
-      <h1 className="mb-4">Gerenciar Usuários</h1>
+    <Container className="py-5">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>Usuários</h1>
+        <Button
+          variant="primary"
+          onClick={() => navigate('/admin/users/add')}
+          className="d-flex align-items-center gap-2"
+        >
+          <FaPlus /> Novo Usuário
+        </Button>
+      </div>
 
       {error && (
         <Alert variant="danger" className="mb-4">
@@ -170,7 +182,7 @@ const Users = () => {
         message="Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita."
         itemName={selectedUser?.name}
       />
-    </div>
+    </Container>
   );
 };
 

@@ -1,12 +1,13 @@
-import { useTheme } from '../context/ThemeContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
+import { FaSun, FaMoon } from 'react-icons/fa';
 
 const Navbar = () => {
-  const { isDarkMode, toggleTheme } = useTheme();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userType, setUserType] = useState('');
   const navigate = useNavigate();
+  const { isDarkMode, toggleTheme } = useTheme();
 
   useEffect(() => {
     const checkAuth = () => {
@@ -42,7 +43,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg bg-body-tertiary fixed-top shadow-sm">
+      <nav className="navbar navbar-expand-lg fixed-top shadow-sm">
         <div className="container">
           <Link className="navbar-brand" to="/">
             <img src="/logo.png" alt="Boa Estadia" height="30" />
@@ -50,15 +51,11 @@ const Navbar = () => {
 
           <div className="d-flex align-items-center gap-3">
             <button
-              className="btn btn-link"
+              className="btn btn-outline-secondary"
               onClick={toggleTheme}
-              aria-label={isDarkMode ? 'Ativar modo claro' : 'Ativar modo escuro'}
+              title={isDarkMode ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
             >
-              {isDarkMode ? (
-                <i className="bi bi-sun-fill fs-5"></i>
-              ) : (
-                <i className="bi bi-moon-fill fs-5"></i>
-              )}
+              {isDarkMode ? <FaSun /> : <FaMoon />}
             </button>
 
             {isLoggedIn ? (

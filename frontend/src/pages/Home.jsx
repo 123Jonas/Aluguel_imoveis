@@ -1,117 +1,170 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import PropertyCard from '../components/PropertyCard';
+import { FaSearch, FaHome, FaBuilding, FaStore } from 'react-icons/fa';
+
+// Configurar o axios
+axios.defaults.withCredentials = true;
 
 const Home = () => {
-  const [location, setLocation] = useState('');
   const navigate = useNavigate();
+  const [properties, setProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    type: 'all',
+    minPrice: '',
+    maxPrice: '',
+    location: ''
+  });
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (location.trim()) {
-      navigate(`/anuncios?location=${encodeURIComponent(location)}`);
+  useEffect(() => {
+    fetchProperties();
+  }, []);
+
+  const fetchProperties = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL;
+      const response = await axios.get(`${apiUrl}/api/properties/available`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      setProperties(response.data.data.properties);
+    } catch (error) {
+      console.error('Erro ao buscar propriedades:', error);
+      setError('Erro ao carregar imóveis. Por favor, tente novamente mais tarde.');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    // Implementar lógica de busca
+    console.log('Buscando com filtros:', filters);
+  };
+
+  const handleViewDetails = (propertyId) => {
+    navigate(`/properties/${propertyId}`);
+  };
+
+  if (loading) {
+    return (
+      <Container className="py-5 text-center">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Carregando...</span>
+        </Spinner>
+      </Container>
+    );
+  }
+
   return (
-    <>
+    <Container className="py-5">
       {/* Hero Section */}
-      <section className="hero position-relative">
-        <div className="hero-overlay"></div>
-        <div className="container position-relative min-vh-100 d-flex flex-column justify-content-center">
-          <div className="row">
-            <div className="col-lg-6 text-white">
-              <h1 className="display-4 fw-bold mb-4">Alugue seu imóvel no Bié com segurança</h1>
-              <p className="lead mb-5">Encontre apartamentos e casas para alugar em todo o país. Processo 100% digital, com garantia e segurança.</p>
-              
-              <div className="search-container bg-white p-4 rounded-4 shadow-lg">
-                <h2 className="h5 text-dark mb-4">Onde você quer morar?</h2>
-                <form onSubmit={handleSearch} className="d-flex flex-column gap-3">
-                  <div className="input-group">
-                    <span className="input-group-text border-0 bg-light">
-                      <i className="bi bi-search"></i>
-                    </span>
-                    <input
-                      type="text"
-                      className="form-control form-control-lg border-0 bg-light"
-                      placeholder="Digite um bairro ou cidade"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-primary btn-lg w-100">
-                    Buscar imóveis
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <div className="text-center mb-5">
+        <h1 className="display-4 mb-3">Encontre seu Lar Ideal</h1>
+        <p className="lead text-muted">
+          Explore nossa seleção de imóveis disponíveis para aluguel
+        </p>
+      </div>
 
-      {/* Features Section */}
-      <section className="py-5 bg-light">
-        <div className="container">
-          <div className="row g-4">
-            <div className="col-md-4">
-              <div className="text-center">
-                <i className="bi bi-shield-check fs-1 text-primary mb-3"></i>
-                <h3 className="h5">Aluguel Garantido</h3>
-                <p className="text-muted">Garantimos o pagamento do aluguel em dia para o proprietário</p>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="text-center">
-                <i className="bi bi-file-earmark-text fs-1 text-primary mb-3"></i>
-                <h3 className="h5">Processo 100% Digital</h3>
-                <p className="text-muted">Assinatura digital de contrato e envio de documentos online</p>
-              </div>
-            </div>
-            <div className="col-md-4">
-              <div className="text-center">
-                <i className="bi bi-house-heart fs-1 text-primary mb-3"></i>
-                <h3 className="h5">Visitas Agendadas</h3>
-                <p className="text-muted">Agende visitas aos imóveis com nossos consultores</p>
-              </div>
-            </div>
+      {/* Search Section */}
+      <div className="bg-light p-4 rounded-3 mb-5">
+        <Form onSubmit={handleSearch}>
+          <Row className="g-3">
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label>Tipo de Imóvel</Form.Label>
+                <Form.Select name="type" value={filters.type} onChange={handleFilterChange}>
+                  <option value="all">Todos</option>
+                  <option value="apartment">Apartamento</option>
+                  <option value="house">Casa</option>
+                  <option value="commercial">Comercial</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label>Preço Mínimo</Form.Label>
+                <Form.Control
+                  type="number"
+                  name="minPrice"
+                  value={filters.minPrice}
+                  onChange={handleFilterChange}
+                  placeholder="KZ"
+                />
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label>Preço Máximo</Form.Label>
+                <Form.Control
+                  type="number"
+                  name="maxPrice"
+                  value={filters.maxPrice}
+                  onChange={handleFilterChange}
+                  placeholder="KZ"
+                />
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label>Localização</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="location"
+                  value={filters.location}
+                  onChange={handleFilterChange}
+                  placeholder="Cidade ou bairro"
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+          <div className="text-center mt-3">
+            <Button variant="primary" type="submit">
+              <FaSearch className="me-2" />
+              Buscar Imóveis
+            </Button>
           </div>
-        </div>
-      </section>
+        </Form>
+      </div>
 
-      {/* Popular Neighborhoods */}
-      <section className="py-5">
-        <div className="container">
-          <h2 className="text-center mb-5">Bairros mais buscados</h2>
-          <div className="row g-4">
-            {['Talatona', 'Miramar', 'Maianga', 'Kilamba'].map((neighborhood) => (
-              <div key={neighborhood} className="col-md-3">
-                <div className="card neighborhood-card border-0 shadow-sm h-100">
-                  <div className="card-body text-center">
-                    <h3 className="h6 mb-3">{neighborhood}</h3>
-                    <p className="small text-muted mb-3">A partir de AOA 150.000</p>
-                    <button className="btn btn-outline-primary btn-sm">Ver imóveis</button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Properties Section */}
+      {error && (
+        <Alert variant="danger" className="mb-4">
+          {error}
+        </Alert>
+      )}
 
-      {/* CTA Section */}
-      <section className="py-5 bg-primary text-white">
-        <div className="container">
-          <div className="row align-items-center">
-            <div className="col-lg-8">
-              <h2>Quer anunciar seu imóvel?</h2>
-              <p className="lead mb-0">Anuncie seu imóvel com a gente e tenha acesso a milhares de inquilinos qualificados.</p>
-            </div>
-            <div className="col-lg-4 text-lg-end mt-4 mt-lg-0">
-              <button className="btn btn-outline-light btn-lg">Anunciar agora</button>
-            </div>
-          </div>
-        </div>
-      </section>
-    </>
+      {properties.length === 0 ? (
+        <Alert variant="info">
+          Nenhum imóvel disponível no momento.
+        </Alert>
+      ) : (
+        <Row>
+          {properties.map(property => (
+            <Col key={property._id} md={6} lg={4} className="mb-4">
+              <PropertyCard
+                property={property}
+                onViewDetails={handleViewDetails}
+              />
+            </Col>
+          ))}
+        </Row>
+      )}
+    </Container>
   );
 };
 
